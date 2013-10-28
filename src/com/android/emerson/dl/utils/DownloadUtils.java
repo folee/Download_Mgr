@@ -12,7 +12,7 @@ import java.util.UUID;
 public class DownloadUtils {
 
 	private static final String	SDCARD_ROOT	= Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
-	public static final String	FILE_ROOT	= SDCARD_ROOT + "testDM/";
+	public static final String	FILE_ROOT	= SDCARD_ROOT + "EmersonDM/";
 
 	public static boolean isSdCardWrittenable() {
 

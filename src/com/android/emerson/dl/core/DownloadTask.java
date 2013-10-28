@@ -32,7 +32,7 @@ public class DownloadTask extends AsyncTask<Void, Integer, Long> {
     public static int TIME_OUT = 30000;
     public static int BUFFER_SIZE = 1024 * 8;
     public static int MAX_TASK_COUNT = 100;
-    public static int MAX_DOWNLOAD_THREAD_COUNT = 1;
+    public static int MAX_DOWNLOAD_THREAD_COUNT = 2;
     public static boolean DEBUG = true;
 
     private URL URL;
