@@ -14,8 +14,8 @@ import com.android.emerson.dl.utils.DownloadValues;
 
 public class DownloadListAdapter extends BaseAdapter {
 
-	private Context mContext;
-	private ArrayList<HashMap<Integer, String>> dataList;
+	private Context								mContext;
+	private ArrayList<HashMap<Integer, String>>	dataList;
 
 	public DownloadListAdapter(Context context) {
 		mContext = context;
@@ -42,8 +42,7 @@ public class DownloadListAdapter extends BaseAdapter {
 	}
 
 	public void addItem(String url, boolean isPaused) {
-		HashMap<Integer, String> item = ViewHolder.getItemDataMap(url, null,
-				null, isPaused + "");
+		HashMap<Integer, String> item = ViewHolder.getItemDataMap(url, null, null, isPaused + "");
 		dataList.add(item);
 		this.notifyDataSetChanged();
 	}
@@ -62,8 +61,7 @@ public class DownloadListAdapter extends BaseAdapter {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (convertView == null) {
-			convertView = LayoutInflater.from(mContext).inflate(
-					R.layout.download_list_item, null);
+			convertView = LayoutInflater.from(mContext).inflate(R.layout.download_list_item, null);
 		}
 
 		HashMap<Integer, String> itemData = dataList.get(position);
@@ -73,19 +71,16 @@ public class DownloadListAdapter extends BaseAdapter {
 		ViewHolder viewHolder = new ViewHolder(convertView);
 		viewHolder.setData(itemData);
 
-		viewHolder.continueButton.setOnClickListener(new DownloadBtnListener(
-				url, viewHolder));
-		viewHolder.pauseButton.setOnClickListener(new DownloadBtnListener(url,
-				viewHolder));
-		viewHolder.deleteButton.setOnClickListener(new DownloadBtnListener(url,
-				viewHolder));
+		viewHolder.continueButton.setOnClickListener(new DownloadBtnListener(url, viewHolder));
+		viewHolder.pauseButton.setOnClickListener(new DownloadBtnListener(url, viewHolder));
+		viewHolder.deleteButton.setOnClickListener(new DownloadBtnListener(url, viewHolder));
 
 		return convertView;
 	}
 
 	private class DownloadBtnListener implements View.OnClickListener {
-		private String url;
-		private ViewHolder mViewHolder;
+		private String		url;
+		private ViewHolder	mViewHolder;
 
 		public DownloadBtnListener(String url, ViewHolder viewHolder) {
 			this.url = url;
@@ -99,8 +94,7 @@ public class DownloadListAdapter extends BaseAdapter {
 			switch (v.getId()) {
 			case R.id.btn_continue:
 				// mDownloadManager.continueTask(mPosition);
-				downloadIntent.putExtra(DownloadValues.TYPE,
-						DownloadValues.Types.CONTINUE);
+				downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.CONTINUE);
 				downloadIntent.putExtra(DownloadValues.URL, url);
 				mContext.startService(downloadIntent);
 
@@ -128,33 +122,33 @@ public class DownloadListAdapter extends BaseAdapter {
 		}
 	}
 
-	// private class DownloadBtnListener implements View.OnClickListener {
-	// private int mPosition;
-	// private ViewHolder mViewHolder;
-	//
-	// public DownloadBtnListener(int position, ViewHolder viewHolder) {
-	// this.mPosition = position;
-	// this.mViewHolder = viewHolder;
-	// }
-	//
-	// @Override
-	// public void onClick(View v) {
-	// switch (v.getId()) {
-	// case R.id.btn_continue:
-	// // mDownloadManager.continueTask(mPosition);
-	// mViewHolder.continueButton.setVisibility(View.GONE);
-	// mViewHolder.pauseButton.setVisibility(View.VISIBLE);
-	// break;
-	// case R.id.btn_pause:
-	// // mDownloadManager.pauseTask(mPosition);
-	// mViewHolder.continueButton.setVisibility(View.VISIBLE);
-	// mViewHolder.pauseButton.setVisibility(View.GONE);
-	// break;
-	// case R.id.btn_delete:
-	// // mDownloadManager.deleteTask(mPosition);
-	// DownloadListAdapter.this.notifyDataSetChanged();
-	// break;
-	// }
-	// }
-	// }
+//	private class DownloadBtnListener implements View.OnClickListener {
+//		private int			mPosition;
+//		private ViewHolder	mViewHolder;
+//
+//		public DownloadBtnListener(int position, ViewHolder viewHolder) {
+//			this.mPosition = position;
+//			this.mViewHolder = viewHolder;
+//		}
+//
+//		@Override
+//		public void onClick(View v) {
+//			switch (v.getId()) {
+//			case R.id.btn_continue:
+//				// mDownloadManager.continueTask(mPosition);
+//				mViewHolder.continueButton.setVisibility(View.GONE);
+//				mViewHolder.pauseButton.setVisibility(View.VISIBLE);
+//				break;
+//			case R.id.btn_pause:
+//				// mDownloadManager.pauseTask(mPosition);
+//				mViewHolder.continueButton.setVisibility(View.VISIBLE);
+//				mViewHolder.pauseButton.setVisibility(View.GONE);
+//				break;
+//			case R.id.btn_delete:
+//				// mDownloadManager.deleteTask(mPosition);
+//				DownloadListAdapter.this.notifyDataSetChanged();
+//				break;
+//			}
+//		}
+//	}
 }

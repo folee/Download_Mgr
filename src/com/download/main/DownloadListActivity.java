@@ -1,4 +1,3 @@
-
 package com.download.main;
 
 import com.android.emerson.dl.core.DownloadHelper;
@@ -22,73 +21,72 @@ import android.widget.Toast;
 
 public class DownloadListActivity extends Activity {
 
-    private ListView downloadList;
-    private Button addButton;
+	private ListView			downloadList;
+	private Button				addButton;
 
-    private DownloadListAdapter downloadListAdapter;
-    private DownloadReceiver mReceiver;
+	private DownloadListAdapter	downloadListAdapter;
+	private DownloadReceiver	mReceiver;
 
-    private int urlIndex = 0;
+	private int					urlIndex	= 0;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
 
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.download_list_activity);
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.download_list_activity);
 
+		downloadList = (ListView) findViewById(R.id.download_list);
+		downloadListAdapter = new DownloadListAdapter(this);
+		downloadList.setAdapter(downloadListAdapter);
 
-        downloadList = (ListView) findViewById(R.id.download_list);
-        downloadListAdapter = new DownloadListAdapter(this);
-        downloadList.setAdapter(downloadListAdapter);
+		addButton = (Button) findViewById(R.id.btn_add);
+		addButton.setOnClickListener(new View.OnClickListener() {
 
-        addButton = (Button) findViewById(R.id.btn_add);
-        addButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				DownloadHelper.addNewTask(DownloadListActivity.this, DownloadValues.url[urlIndex],
+						new PreDownloadStatusListener() {
 
-            @Override
-            public void onClick(View v) {
-            	DownloadHelper.addNewTask(DownloadListActivity.this, DownloadValues.url[urlIndex], new PreDownloadStatusListener(){
+							@Override
+							public void notFoundSDCard(int errorCode, String errorInfo) {
+								Toast.makeText(DownloadListActivity.this, "没有SD卡", Toast.LENGTH_SHORT).show();
+							}
 
-					@Override
-					public void notFoundSDCard(int errorCode, String errorInfo) {
-						Toast.makeText(DownloadListActivity.this, "没有SD卡", Toast.LENGTH_SHORT).show();
-					}
+							@Override
+							public void sdCardCannotWriteOrRead(int errorCode, String errorInfo) {
+								Toast.makeText(DownloadListActivity.this, "不能读写SD卡", Toast.LENGTH_SHORT).show();
 
-					@Override
-					public void sdCardCannotWriteOrRead(int errorCode,
-							String errorInfo) {
-						Toast.makeText(DownloadListActivity.this, "不能读写SD卡", Toast.LENGTH_SHORT).show();
-						
-					}
+							}
 
-					@Override
-					public void moreTaskCount(int errorCode, String errorInfo) {
-						Toast.makeText(DownloadListActivity.this, "任务列表已满", Toast.LENGTH_SHORT).show();
-					}
-            		
-            	});
+							@Override
+							public void moreTaskCount(int errorCode, String errorInfo) {
+								Toast.makeText(DownloadListActivity.this, "任务列表已满", Toast.LENGTH_SHORT).show();
+							}
 
-                urlIndex++;
-                if (urlIndex >= DownloadValues.url.length) {
-                    urlIndex = 0;
-                }
-            }
-        });
+						});
 
-        DownloadHelper.startAllTask(DownloadListActivity.this);
-        
-        mReceiver = new DownloadReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(DownloadValues.Actions.BROADCAST_RECEIVER_ACTION);
-        registerReceiver(mReceiver, filter);
-        
-        mReceiver.setDownloadListener(new DownloadListener(){
+				urlIndex++;
+				if (urlIndex >= DownloadValues.url.length) {
+					urlIndex = 0;
+				}
+			}
+		});
+
+		DownloadHelper.startAllTask(DownloadListActivity.this);
+
+		mReceiver = new DownloadReceiver();
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(DownloadValues.Actions.BROADCAST_RECEIVER_ACTION);
+		registerReceiver(mReceiver, filter);
+
+		mReceiver.setDownloadListener(new DownloadListener() {
 
 			@Override
 			public void handleAddAction(String url, Intent intent, boolean isPaused) {
 				Log.v("tbp", "add new download task");
 				if (!TextUtils.isEmpty(url)) {
-                  downloadListAdapter.addItem(url, isPaused);
-                }
+					downloadListAdapter.addItem(url, isPaused);
+				}
 			}
 
 			@Override
@@ -96,52 +94,51 @@ public class DownloadListActivity extends Activity {
 				Log.v("tbp", "download completed");
 				if (!TextUtils.isEmpty(url)) {
 					downloadListAdapter.removeItem(url);
-                }
+				}
 			}
 
 			@Override
 			public void handleProgress(String url, Intent intent) {
 				View taskListItem = downloadList.findViewWithTag(url);
-                ViewHolder viewHolder = new ViewHolder(taskListItem);
-                viewHolder.setData(url, intent.getStringExtra(DownloadValues.PROCESS_SPEED),
-                      intent.getStringExtra(DownloadValues.PROCESS_PROGRESS));
+				ViewHolder viewHolder = new ViewHolder(taskListItem);
+				viewHolder.setData(url, intent.getStringExtra(DownloadValues.PROCESS_SPEED),
+						intent.getStringExtra(DownloadValues.PROCESS_PROGRESS));
 			}
-        });
-        mReceiver.setDownloadErrorListener(new DownloadErrorListener(){
+		});
+		mReceiver.setDownloadErrorListener(new DownloadErrorListener() {
 			@Override
-			public void downloadErrorActions(String url, int errorCode,
-					String errorInfo) {
+			public void downloadErrorActions(String url, int errorCode, String errorInfo) {
 				switch (errorCode) {
 				case DownloadTask.ERROR_UNKONW:
-	        		Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-	        		break;
+					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
+					break;
 				case DownloadTask.ERROR_BLOCK_INTERNET:
 					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-	        		View taskListItem = downloadList.findViewWithTag(url);
-	        		ViewHolder viewHolder = new ViewHolder(taskListItem);
-	        		viewHolder.onPause();
-	        		break;
+					View taskListItem = downloadList.findViewWithTag(url);
+					ViewHolder viewHolder = new ViewHolder(taskListItem);
+					viewHolder.onPause();
+					break;
 				case DownloadTask.ERROR_TIME_OUT:
 					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-	        		View timeoutItem = downloadList.findViewWithTag(url);
-	        		ViewHolder timeoutHolder = new ViewHolder(timeoutItem);
-	        		timeoutHolder.onPause();
-	        		break;
+					View timeoutItem = downloadList.findViewWithTag(url);
+					ViewHolder timeoutHolder = new ViewHolder(timeoutItem);
+					timeoutHolder.onPause();
+					break;
 				case DownloadTask.ERROR_FILE_EXIST:
 					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-	        		break;
-	        	case DownloadTask.ERROR_SD_NO_MEMORY:
-	        		Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-	        		break;
+					break;
+				case DownloadTask.ERROR_SD_NO_MEMORY:
+					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
+					break;
 				}
 			}
-        });
-    }
+		});
+	}
 
-    @Override
-    protected void onDestroy() {
+	@Override
+	protected void onDestroy() {
 
-        unregisterReceiver(mReceiver);
-        super.onDestroy();
-    }
+		unregisterReceiver(mReceiver);
+		super.onDestroy();
+	}
 }

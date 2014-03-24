@@ -83,7 +83,7 @@ public final class DownloadHttpClient implements HttpClient {
 	// Default connection and socket timeout of 60 seconds. Tweak to taste.
 	private static final int SOCKET_OPERATION_TIMEOUT = 60 * 1000;
 
-	private static final String TAG = "AndroidHttpClient";
+	private static final String TAG = DownloadHttpClient.class.getSimpleName();
 
 	/** Interceptor throws an exception if the executing thread is blocked */
 	private static final HttpRequestInterceptor sThreadCheckInterceptor = new HttpRequestInterceptor() {

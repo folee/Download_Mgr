@@ -12,7 +12,7 @@ import android.text.TextUtils;
 
 public class ConfigUtils {
 
-	public static final String PREFERENCE_NAME = "com.emerson.download";
+	public static final String	PREFERENCE_NAME	= "com.emerson.download";
 
 	public static SharedPreferences getPreferences(Context context) {
 		return context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
@@ -35,8 +35,8 @@ public class ConfigUtils {
 		}
 	}
 
-	public static final int URL_COUNT = DownloadTask.MAX_DOWNLOAD_THREAD_COUNT;
-	public static final String KEY_URL = "url";
+	public static final int		URL_COUNT	= DownloadTask.MAX_DOWNLOAD_THREAD_COUNT;
+	public static final String	KEY_URL		= "url";
 
 	public static void storeURL(Context context, int index, String url) {
 		setString(context, KEY_URL + index, url);
