@@ -1,13 +1,5 @@
 package com.download.main;
 
-import com.android.emerson.dl.core.DownloadHelper;
-import com.android.emerson.dl.core.DownloadReceiver;
-import com.android.emerson.dl.core.DownloadTask;
-import com.android.emerson.dl.core.DownloadHelper.PreDownloadStatusListener;
-import com.android.emerson.dl.core.DownloadReceiver.DownloadErrorListener;
-import com.android.emerson.dl.core.DownloadReceiver.DownloadListener;
-import com.android.emerson.dl.utils.DownloadValues;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -18,6 +10,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.android.emerson.dl.core.DownloadHelper;
+import com.android.emerson.dl.core.DownloadHelper.PreDownloadStatusListener;
+import com.android.emerson.dl.core.DownloadReceiver;
+import com.android.emerson.dl.core.DownloadReceiver.DownloadErrorListener;
+import com.android.emerson.dl.core.DownloadReceiver.DownloadListener;
+import com.android.emerson.dl.core.DownloadTask;
+import com.android.emerson.dl.utils.ConfigUtils;
+import com.android.emerson.dl.utils.DownloadValues;
 
 public class DownloadListActivity extends Activity {
 
@@ -34,7 +35,8 @@ public class DownloadListActivity extends Activity {
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.download_list_activity);
-
+		ConfigUtils.InitPath(this);
+		
 		downloadList = (ListView) findViewById(R.id.download_list);
 		downloadListAdapter = new DownloadListAdapter(this);
 		downloadList.setAdapter(downloadListAdapter);

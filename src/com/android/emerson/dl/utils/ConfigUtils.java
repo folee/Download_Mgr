@@ -1,18 +1,26 @@
 package com.android.emerson.dl.utils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.android.emerson.dl.core.DownloadTask;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.Environment;
 import android.text.TextUtils;
+import android.util.Log;
+
+import com.android.emerson.dl.core.DownloadTask;
+import com.download.main.Util;
 
 public class ConfigUtils {
 
+	private static final String TAG = ConfigUtils.class.getSimpleName();
 	public static final String	PREFERENCE_NAME	= "com.emerson.download";
+	
+	public static String		IMG_PATH				= null;
+	public static String		FILE_PATH				= null;
 
 	public static SharedPreferences getPreferences(Context context) {
 		return context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
@@ -33,6 +41,23 @@ public class ConfigUtils {
 			editor.putString(key, value);
 			editor.commit();
 		}
+	}
+	
+	public static void InitPath(Context ctx) {
+		File temFile = Environment.getExternalStorageDirectory();
+
+		if (temFile != null && temFile.canWrite() && Util.getAvailableExternalMemorySize() > 0) {
+			IMG_PATH = Environment.getExternalStorageDirectory().getPath() + "/DL_Mgr/Image/";
+			FILE_PATH = Environment.getExternalStorageDirectory().getPath() + "/DL_Mgr/Downloads/";
+		}
+		else {
+			IMG_PATH = ctx.getFilesDir() + "/Image/";
+			FILE_PATH = ctx.getFilesDir() + File.separator;
+		}
+
+		new File(IMG_PATH).mkdirs();
+		new File(FILE_PATH).mkdirs();
+		Log.i(TAG, "IMG_PATH-->" + IMG_PATH + "\n FILEPATH-->" + FILE_PATH);
 	}
 
 	public static final int		URL_COUNT	= DownloadTask.MAX_DOWNLOAD_THREAD_COUNT;
