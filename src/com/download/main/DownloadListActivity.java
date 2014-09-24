@@ -35,9 +35,8 @@ public class DownloadListActivity extends Activity {
 	private DLFileInfo getNewDlFile(){
 		DLFileInfo dLFileInfo = new DLFileInfo();
 		dLFileInfo.setFilePath(ConfigUtils.FILE_PATH);
-		//dLFileInfo.setFileUrl(DownloadValues.url[urlIndex]);
-		dLFileInfo.setFileUrl(DownloadValues.imgurl[0]);
-		dLFileInfo.setFileType("jpg");
+		dLFileInfo.setFileUrl(DownloadValues.url[urlIndex]);
+		dLFileInfo.setFileType("apk");
 		dLFileInfo.setFileName(Integer.toHexString(dLFileInfo.getFileUrl().hashCode()) + "." + dLFileInfo.getFileType());
 		
 		return dLFileInfo;
