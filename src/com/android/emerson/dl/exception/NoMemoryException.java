@@ -1,7 +1,7 @@
 
 package com.android.emerson.dl.exception;
 
-public class NoMemoryException extends DownloadException {
+public class NoMemoryException extends Exception {
 
     /**
      * 

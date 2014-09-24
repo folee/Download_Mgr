@@ -1,65 +1,62 @@
 package com.android.emerson.dl.core;
 
-import com.android.emerson.dl.utils.DownloadValues;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.android.emerson.dl.utils.DLFileInfo;
+import com.android.emerson.dl.utils.DownloadValues;
+
+
 public class DownloadReceiver extends BroadcastReceiver {
-	public DownloadListener      downloadListener = null;
-	public DownloadErrorListener downloadErrorListener = null;
-	
+	public DownloadListener			downloadListener		= null;
+	public DownloadErrorListener	downloadErrorListener	= null;
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		handleIntent(context, intent);
 	}
-	
+
 	private void handleIntent(Context context, Intent intent) {
 
-        if (intent != null
-                && intent.getAction().equals(DownloadValues.Actions.BROADCAST_RECEIVER_ACTION)) {
-            int type = intent.getIntExtra(DownloadValues.TYPE, -1);
-            String url;
+		if (intent != null && intent.getAction().equals(DownloadValues.Actions.BROADCAST_RECEIVER_ACTION)) {
+			int type = intent.getIntExtra(DownloadValues.TYPE, -1);
+			DLFileInfo dLFileInfo = intent.getParcelableExtra(DownloadValues.APPINFO);
 
-            switch (type) {
-                case DownloadValues.Types.ADD:
-                    url = intent.getStringExtra(DownloadValues.URL);
-                    boolean isPaused = intent.getBooleanExtra(DownloadValues.IS_PAUSED, false);
-                    if(downloadListener != null)
-                    	downloadListener.handleAddAction(url, intent, isPaused);
-                    break;
-                case DownloadValues.Types.COMPLETE:
-                    url = intent.getStringExtra(DownloadValues.URL);
-                    if(downloadListener != null)
-                    	downloadListener.handleCompletedAction(url, intent);
-                    break;
-                case DownloadValues.Types.PROCESS:
-                    url = intent.getStringExtra(DownloadValues.URL);
-                    if(downloadListener != null)
-                    	downloadListener.handleProgress(url, intent);
-                    break;
-                case DownloadValues.Types.ERROR:
-                    url = intent.getStringExtra(DownloadValues.URL);
-                    int errorCode = intent.getIntExtra(DownloadValues.ERROR_CODE, DownloadTask.ERROR_UNCATCHED);
-                    String errorInfo = getErrorInfo(errorCode);
-                    handleError(url, errorCode, errorInfo);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-	
-	private void handleError(String url, int errorCode, String errorInfo) {
-		if(downloadErrorListener != null) {
-			downloadErrorListener.downloadErrorActions(url, errorCode, errorInfo);
+			switch (type) {
+			case DownloadValues.Types.ADD:
+				boolean isPaused = intent.getBooleanExtra(DownloadValues.IS_PAUSED, false);
+				if (downloadListener != null)
+					downloadListener.handleAddAction(dLFileInfo, intent, isPaused);
+				break;
+			case DownloadValues.Types.COMPLETE:
+				if (downloadListener != null)
+					downloadListener.handleCompletedAction(dLFileInfo, intent);
+				break;
+			case DownloadValues.Types.PROCESS:
+				if (downloadListener != null)
+					downloadListener.handleProgress(dLFileInfo, intent);
+				break;
+			case DownloadValues.Types.ERROR:
+				int errorCode = intent.getIntExtra(DownloadValues.ERROR_CODE, DownloadTask.ERROR_UNCATCHED);
+				String errorInfo = getErrorInfo(errorCode);
+				handleError(dLFileInfo, errorCode, errorInfo);
+				break;
+			default:
+				break;
+			}
 		}
-    }
-	
+	}
+
+	private void handleError(DLFileInfo dLFileInfo, int errorCode, String errorInfo) {
+		if (downloadErrorListener != null) {
+			downloadErrorListener.downloadErrorActions(dLFileInfo, errorCode, errorInfo);
+		}
+	}
+
 	private String getErrorInfo(int errorCode) {
 		String errorInfo = "";
-		switch(errorCode){
+		switch (errorCode) {
 		case DownloadTask.ERROR_UNKONW:
 			errorInfo = DownloadTask.ERROR_UNKONW_INFO;
 			break;
@@ -78,20 +75,24 @@ public class DownloadReceiver extends BroadcastReceiver {
 		}
 		return errorInfo;
 	}
-	
+
 	public interface DownloadListener {
-		void handleAddAction(String url, Intent intent, boolean isPaused);
-		void handleCompletedAction(String url, Intent intent);
-		void handleProgress(String url, Intent intent);
+		void handleAddAction(DLFileInfo dLFileInfo, Intent intent, boolean isPaused);
+
+		void handleCompletedAction(DLFileInfo dLFileInfo, Intent intent);
+
+		void handleProgress(DLFileInfo dLFileInfo, Intent intent);
 	}
-	public void setDownloadListener(DownloadListener downloadListener){
+
+	public void setDownloadListener(DownloadListener downloadListener) {
 		this.downloadListener = downloadListener;
 	}
-	
+
 	public interface DownloadErrorListener {
-		void downloadErrorActions(String url, int errorCode, String errorInfo);
+		void downloadErrorActions(DLFileInfo dLFileInfo, int errorCode, String errorInfo);
 	}
-	public void setDownloadErrorListener(DownloadErrorListener downloadErrorListener){
+
+	public void setDownloadErrorListener(DownloadErrorListener downloadErrorListener) {
 		this.downloadErrorListener = downloadErrorListener;
 	}
 }

@@ -1,22 +1,20 @@
 package com.download.main;
 
-import java.util.HashMap;
-
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.android.emerson.dl.core.DownloadTask;
+import com.android.emerson.dl.utils.DLFileInfo;
 import com.android.emerson.dl.utils.DownloadUtils;
 
 public class ViewHolder {
 
-	public static final int	KEY_URL			= 0;
-	public static final int	KEY_SPEED		= 1;
-	public static final int	KEY_PROGRESS	= 2;
-	public static final int	KEY_IS_PAUSED	= 3;
+//	public static final int	KEY_URL			= 0;
+//	public static final int	KEY_SPEED		= 1;
+//	public static final int	KEY_PROGRESS	= 2;
+//	public static final int	KEY_IS_PAUSED	= 3;
 
 	public TextView			titleText;
 	public ProgressBar		progressBar;
@@ -39,27 +37,24 @@ public class ViewHolder {
 		}
 	}
 
-	public static HashMap<Integer, String> getItemDataMap(String url, String speed, String progress, String isPaused) {
-		HashMap<Integer, String> item = new HashMap<Integer, String>();
-		item.put(KEY_URL, url);
-		item.put(KEY_SPEED, speed);
-		item.put(KEY_PROGRESS, progress);
-		item.put(KEY_IS_PAUSED, isPaused);
-		return item;
-	}
+//	public static HashMap<Integer, DLFileInfo> getItemDataMap(DLFileInfo dLFileInfo) {
+//		HashMap<Integer, DLFileInfo> item = new HashMap<Integer, DLFileInfo>();
+//		item.put(KEY_URL, dLFileInfo);
+//		return item;
+//	}
 
-	public void setData(HashMap<Integer, String> item) {
+	public void setData(DLFileInfo dLFileInfo) {
 		if (hasInited) {
-			titleText.setText(DownloadUtils.getFileNameFromUrl(item.get(KEY_URL)));
-			speedText.setText(item.get(KEY_SPEED));
-			String progress = item.get(KEY_PROGRESS);
+			titleText.setText(DownloadUtils.getFileNameFromUrl(dLFileInfo.getFileUrl()));
+			speedText.setText(dLFileInfo.getSpeed());
+			String progress = dLFileInfo.getProgress();
 			if (TextUtils.isEmpty(progress)) {
 				progressBar.setProgress(0);
 			}
 			else {
 				progressBar.setProgress(Integer.parseInt(progress));
 			}
-			if (Boolean.parseBoolean(item.get(KEY_IS_PAUSED))) {
+			if (Boolean.parseBoolean(dLFileInfo.getIsPaused())) {
 				onPause();
 			}
 		}
@@ -72,25 +67,25 @@ public class ViewHolder {
 		}
 	}
 
-	public void setData(String url, String speed, String progress) {
-		setData(url, speed, progress, false + "");
-	}
-
-	public void setData(String url, String speed, String progress, String isPaused) {
-		if (hasInited) {
-			HashMap<Integer, String> item = getItemDataMap(url, speed, progress, isPaused);
-
-			titleText.setText(DownloadUtils.getFileNameFromUrl(item.get(KEY_URL)));
-			speedText.setText(speed);
-			if (TextUtils.isEmpty(progress)) {
-				progressBar.setProgress(0);
-			}
-			else {
-				progressBar.setProgress(Integer.parseInt(item.get(KEY_PROGRESS)));
-			}
-
-		}
-	}
+//	public void setData(String url, String speed, String progress) {
+//		setData(url, speed, progress, false + "");
+//	}
+//
+//	public void setData(String url, String speed, String progress, String isPaused) {
+//		if (hasInited) {
+//			HashMap<Integer, String> item = getItemDataMap(url, speed, progress, isPaused);
+//
+//			titleText.setText(DownloadUtils.getFileNameFromUrl(item.get(KEY_URL)));
+//			speedText.setText(speed);
+//			if (TextUtils.isEmpty(progress)) {
+//				progressBar.setProgress(0);
+//			}
+//			else {
+//				progressBar.setProgress(Integer.parseInt(item.get(KEY_PROGRESS)));
+//			}
+//
+//		}
+//	}
 
 	// public void bindTask(DownloadTask task) {
 	// if (hasInited) {

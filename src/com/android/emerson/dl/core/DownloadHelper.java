@@ -3,6 +3,7 @@ package com.android.emerson.dl.core;
 import android.content.Context;
 import android.content.Intent;
 
+import com.android.emerson.dl.utils.DLFileInfo;
 import com.android.emerson.dl.utils.DownloadValues;
 
 public class DownloadHelper {
@@ -14,11 +15,17 @@ public class DownloadHelper {
 		context.startService(downloadIntent);
 	}
 
-	public static void addNewTask(Context context, String url, PreDownloadStatusListener preListener) {
+	public static void addNewTask(Context context, DLFileInfo dLFileInfo, PreDownloadStatusListener preListener) {
 		preStatusListener = preListener;
 		Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
 		downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.ADD);
-		downloadIntent.putExtra(DownloadValues.URL, url);
+		downloadIntent.putExtra(DownloadValues.APPINFO, dLFileInfo);
+		context.startService(downloadIntent);
+	}
+	
+	public static void stopAllTask(Context context){
+		Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.STOP);
 		context.startService(downloadIntent);
 	}
 

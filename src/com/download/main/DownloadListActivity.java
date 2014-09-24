@@ -18,10 +18,12 @@ import com.android.emerson.dl.core.DownloadReceiver.DownloadErrorListener;
 import com.android.emerson.dl.core.DownloadReceiver.DownloadListener;
 import com.android.emerson.dl.core.DownloadTask;
 import com.android.emerson.dl.utils.ConfigUtils;
+import com.android.emerson.dl.utils.DLFileInfo;
 import com.android.emerson.dl.utils.DownloadValues;
 
 public class DownloadListActivity extends Activity {
 
+	private String TAG = DownloadListActivity.class.getSimpleName();
 	private ListView			downloadList;
 	private Button				addButton;
 
@@ -29,6 +31,17 @@ public class DownloadListActivity extends Activity {
 	private DownloadReceiver	mReceiver;
 
 	private int					urlIndex	= 0;
+	
+	private DLFileInfo getNewDlFile(){
+		DLFileInfo dLFileInfo = new DLFileInfo();
+		dLFileInfo.setFilePath(ConfigUtils.FILE_PATH);
+		//dLFileInfo.setFileUrl(DownloadValues.url[urlIndex]);
+		dLFileInfo.setFileUrl(DownloadValues.imgurl[0]);
+		dLFileInfo.setFileType("jpg");
+		dLFileInfo.setFileName(Integer.toHexString(dLFileInfo.getFileUrl().hashCode()) + "." + dLFileInfo.getFileType());
+		
+		return dLFileInfo;
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -46,7 +59,7 @@ public class DownloadListActivity extends Activity {
 
 			@Override
 			public void onClick(View v) {
-				DownloadHelper.addNewTask(DownloadListActivity.this, DownloadValues.url[urlIndex],
+				DownloadHelper.addNewTask(DownloadListActivity.this, getNewDlFile(),
 						new PreDownloadStatusListener() {
 
 							@Override
@@ -84,45 +97,50 @@ public class DownloadListActivity extends Activity {
 		mReceiver.setDownloadListener(new DownloadListener() {
 
 			@Override
-			public void handleAddAction(String url, Intent intent, boolean isPaused) {
-				Log.v("tbp", "add new download task");
-				if (!TextUtils.isEmpty(url)) {
-					downloadListAdapter.addItem(url, isPaused);
+			public void handleAddAction(DLFileInfo dLFileInfo, Intent intent, boolean isPaused) {
+				Log.v(TAG, "add new download task");
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl())) {
+					downloadListAdapter.addItem(dLFileInfo, isPaused);
 				}
 			}
 
 			@Override
-			public void handleCompletedAction(String url, Intent intent) {
-				Log.v("tbp", "download completed");
-				if (!TextUtils.isEmpty(url)) {
-					downloadListAdapter.removeItem(url);
+			public void handleCompletedAction(DLFileInfo dLFileInfo, Intent intent) {
+				Log.v(TAG, "download completed");
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl())) {
+					downloadListAdapter.removeItem(dLFileInfo);
 				}
 			}
 
 			@Override
-			public void handleProgress(String url, Intent intent) {
-				View taskListItem = downloadList.findViewWithTag(url);
+			public void handleProgress(DLFileInfo dLFileInfo, Intent intent) {
+				View taskListItem = downloadList.findViewWithTag(dLFileInfo.getFileUrl());
 				ViewHolder viewHolder = new ViewHolder(taskListItem);
-				viewHolder.setData(url, intent.getStringExtra(DownloadValues.PROCESS_SPEED),
-						intent.getStringExtra(DownloadValues.PROCESS_PROGRESS));
+				
+//				intent.getStringExtra(DownloadValues.PROCESS_SPEED)
+//				intent.getStringExtra(DownloadValues.PROCESS_PROGRESS)
+				
+				dLFileInfo.setSpeed(intent.getStringExtra(DownloadValues.PROCESS_SPEED));
+				dLFileInfo.setProgress(intent.getStringExtra(DownloadValues.PROCESS_PROGRESS));
+				viewHolder.setData(dLFileInfo);
 			}
 		});
 		mReceiver.setDownloadErrorListener(new DownloadErrorListener() {
 			@Override
-			public void downloadErrorActions(String url, int errorCode, String errorInfo) {
+			public void downloadErrorActions(DLFileInfo dLFileInfo, int errorCode, String errorInfo) {
 				switch (errorCode) {
 				case DownloadTask.ERROR_UNKONW:
 					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
 					break;
 				case DownloadTask.ERROR_BLOCK_INTERNET:
 					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-					View taskListItem = downloadList.findViewWithTag(url);
+					View taskListItem = downloadList.findViewWithTag(dLFileInfo.getFileUrl());
 					ViewHolder viewHolder = new ViewHolder(taskListItem);
 					viewHolder.onPause();
 					break;
 				case DownloadTask.ERROR_TIME_OUT:
 					Toast.makeText(DownloadListActivity.this, errorInfo, Toast.LENGTH_SHORT).show();
-					View timeoutItem = downloadList.findViewWithTag(url);
+					View timeoutItem = downloadList.findViewWithTag(dLFileInfo.getFileUrl());
 					ViewHolder timeoutHolder = new ViewHolder(timeoutItem);
 					timeoutHolder.onPause();
 					break;

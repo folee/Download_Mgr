@@ -1,12 +1,15 @@
 package com.android.emerson.dl.core;
 
-import com.android.emerson.dl.core.DownloadManager.SDCardAndCountStatusListener;
-import com.android.emerson.dl.utils.DownloadValues;
-
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.text.TextUtils;
+
+import com.android.emerson.dl.core.DownloadManager.SDCardAndCountStatusListener;
+import com.android.emerson.dl.utils.DLFileInfo;
+import com.android.emerson.dl.utils.DownloadValues;
+
+
 
 public class DownloadService extends Service {
 
@@ -14,7 +17,6 @@ public class DownloadService extends Service {
 
 	@Override
 	public IBinder onBind(Intent intent) {
-
 		return null;
 	}
 
@@ -45,14 +47,13 @@ public class DownloadService extends Service {
 			}
 		});
 	}
-
+	
 	@Override
-	public void onStart(Intent intent, int startId) {
-		super.onStart(intent, startId);
+	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null && intent.getAction().equals(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION)) {
 			int type = intent.getIntExtra(DownloadValues.TYPE, -1);
-			String url;
 
+			DLFileInfo dLFileInfo = intent.getParcelableExtra(DownloadValues.APPINFO);
 			switch (type) {
 			case DownloadValues.Types.START:
 				if (!mDownloadManager.isRunning()) {
@@ -63,35 +64,34 @@ public class DownloadService extends Service {
 				}
 				break;
 			case DownloadValues.Types.ADD:
-				url = intent.getStringExtra(DownloadValues.URL);
-				if (!TextUtils.isEmpty(url) && !mDownloadManager.hasTask(url)) {
-					mDownloadManager.addTask(url);
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl()) && !mDownloadManager.hasTask(dLFileInfo.getFileUrl())) {
+					mDownloadManager.addTask(dLFileInfo);
 				}
 				break;
 			case DownloadValues.Types.CONTINUE:
-				url = intent.getStringExtra(DownloadValues.URL);
-				if (!TextUtils.isEmpty(url)) {
-					mDownloadManager.continueTask(url);
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl())) {
+					mDownloadManager.continueTask(dLFileInfo);
 				}
 				break;
 			case DownloadValues.Types.DELETE:
-				url = intent.getStringExtra(DownloadValues.URL);
-				if (!TextUtils.isEmpty(url)) {
-					mDownloadManager.deleteTask(url);
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl())) {
+					mDownloadManager.deleteTask(dLFileInfo);
 				}
 				break;
 			case DownloadValues.Types.PAUSE:
-				url = intent.getStringExtra(DownloadValues.URL);
-				if (!TextUtils.isEmpty(url)) {
-					mDownloadManager.pauseTask(url);
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl())) {
+					mDownloadManager.pauseTask(dLFileInfo);
 				}
 				break;
 			case DownloadValues.Types.STOP:
 				mDownloadManager.close();
+				stopSelf();
 				break;
 			default:
 				break;
 			}
 		}
+		return START_FLAG_REDELIVERY;
 	}
+
 }

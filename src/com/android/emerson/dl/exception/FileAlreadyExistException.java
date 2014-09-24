@@ -1,16 +1,14 @@
 
 package com.android.emerson.dl.exception;
 
-public class FileAlreadyExistException extends DownloadException {
+public class FileAlreadyExistException extends Exception
+{
+	private static final long serialVersionUID = 1L;
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
+	public FileAlreadyExistException(String message)
+	{
 
-    public FileAlreadyExistException(String message) {
-
-        super(message);
-    }
+		super(message);
+	}
 
 }

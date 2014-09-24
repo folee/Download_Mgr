@@ -1,17 +1,16 @@
 package com.android.emerson.dl.utils;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
+
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Environment;
 import android.os.StatFs;
-import java.io.File;
-import java.io.IOException;
-import java.util.UUID;
 
 public class DownloadUtils {
-
-	public static final String	FILE_ROOT	= ConfigUtils.FILE_PATH;
 
 	public static boolean isSdCardWrittenable() {
 
@@ -42,7 +41,7 @@ public class DownloadUtils {
 
 	public static void mkdir() throws IOException {
 
-		File file = new File(FILE_ROOT);
+		File file = new File(ConfigUtils.FILE_PATH);
 		if (!file.exists() || !file.isDirectory())
 			file.mkdir();
 	}

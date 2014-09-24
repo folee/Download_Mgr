@@ -1,7 +1,6 @@
 package com.download.main;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,16 +9,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
+import com.android.emerson.dl.utils.DLFileInfo;
 import com.android.emerson.dl.utils.DownloadValues;
 
 public class DownloadListAdapter extends BaseAdapter {
 
 	private Context								mContext;
-	private ArrayList<HashMap<Integer, String>>	dataList;
+	private ArrayList< DLFileInfo>	dataList;
 
 	public DownloadListAdapter(Context context) {
 		mContext = context;
-		dataList = new ArrayList<HashMap<Integer, String>>();
+		dataList = new ArrayList<DLFileInfo>();
 	}
 
 	@Override
@@ -37,21 +37,21 @@ public class DownloadListAdapter extends BaseAdapter {
 		return position;
 	}
 
-	public void addItem(String url) {
-		addItem(url, false);
+	public void addItem(DLFileInfo dLFileInfo) {
+		addItem(dLFileInfo, false);
 	}
 
-	public void addItem(String url, boolean isPaused) {
-		HashMap<Integer, String> item = ViewHolder.getItemDataMap(url, null, null, isPaused + "");
-		dataList.add(item);
+	public void addItem(DLFileInfo dLFileInfo, boolean isPaused) {
+		dLFileInfo.setIsPaused(isPaused + "");
+		dataList.add(dLFileInfo);
 		this.notifyDataSetChanged();
 	}
 
-	public void removeItem(String url) {
+	public void removeItem(DLFileInfo dLFileInfo) {
 		String tmp;
 		for (int i = 0; i < dataList.size(); i++) {
-			tmp = dataList.get(i).get(ViewHolder.KEY_URL);
-			if (tmp.equals(url)) {
+			tmp = dataList.get(i).getFileUrl();
+			if (tmp.equals(dLFileInfo.getFileUrl())) {
 				dataList.remove(i);
 				this.notifyDataSetChanged();
 			}
@@ -64,26 +64,26 @@ public class DownloadListAdapter extends BaseAdapter {
 			convertView = LayoutInflater.from(mContext).inflate(R.layout.download_list_item, null);
 		}
 
-		HashMap<Integer, String> itemData = dataList.get(position);
-		String url = itemData.get(ViewHolder.KEY_URL);
+		DLFileInfo itemData = dataList.get(position);
+		String url = itemData.getFileUrl();
 		convertView.setTag(url);
 
 		ViewHolder viewHolder = new ViewHolder(convertView);
 		viewHolder.setData(itemData);
 
-		viewHolder.continueButton.setOnClickListener(new DownloadBtnListener(url, viewHolder));
-		viewHolder.pauseButton.setOnClickListener(new DownloadBtnListener(url, viewHolder));
-		viewHolder.deleteButton.setOnClickListener(new DownloadBtnListener(url, viewHolder));
+		viewHolder.continueButton.setOnClickListener(new DownloadBtnListener(itemData, viewHolder));
+		viewHolder.pauseButton.setOnClickListener(new DownloadBtnListener(itemData, viewHolder));
+		viewHolder.deleteButton.setOnClickListener(new DownloadBtnListener(itemData, viewHolder));
 
 		return convertView;
 	}
 
 	private class DownloadBtnListener implements View.OnClickListener {
-		private String		url;
+		private DLFileInfo dLFileInfo;
 		private ViewHolder	mViewHolder;
 
-		public DownloadBtnListener(String url, ViewHolder viewHolder) {
-			this.url = url;
+		public DownloadBtnListener(DLFileInfo dLFileInfo, ViewHolder viewHolder) {
+			this.dLFileInfo = dLFileInfo;
 			this.mViewHolder = viewHolder;
 		}
 
@@ -95,7 +95,7 @@ public class DownloadListAdapter extends BaseAdapter {
 			case R.id.btn_continue:
 				// mDownloadManager.continueTask(mPosition);
 				downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.CONTINUE);
-				downloadIntent.putExtra(DownloadValues.URL, url);
+				downloadIntent.putExtra(DownloadValues.APPINFO, dLFileInfo);
 				mContext.startService(downloadIntent);
 
 				mViewHolder.continueButton.setVisibility(View.GONE);
@@ -104,7 +104,7 @@ public class DownloadListAdapter extends BaseAdapter {
 			case R.id.btn_pause:
 				// mDownloadManager.pauseTask(mPosition);
 				downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.PAUSE);
-				downloadIntent.putExtra(DownloadValues.URL, url);
+				downloadIntent.putExtra(DownloadValues.APPINFO, dLFileInfo);
 				mContext.startService(downloadIntent);
 
 				mViewHolder.continueButton.setVisibility(View.VISIBLE);
@@ -113,10 +113,10 @@ public class DownloadListAdapter extends BaseAdapter {
 			case R.id.btn_delete:
 				// mDownloadManager.deleteTask(mPosition);
 				downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.DELETE);
-				downloadIntent.putExtra(DownloadValues.URL, url);
+				downloadIntent.putExtra(DownloadValues.APPINFO, dLFileInfo);
 				mContext.startService(downloadIntent);
 
-				removeItem(url);
+				removeItem(dLFileInfo);
 				break;
 			}
 		}
