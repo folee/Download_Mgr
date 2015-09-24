@@ -9,8 +9,6 @@ import com.android.emerson.dl.core.DownloadManager.SDCardAndCountStatusListener;
 import com.android.emerson.dl.utils.DLFileInfo;
 import com.android.emerson.dl.utils.DownloadValues;
 
-
-
 public class DownloadService extends Service {
 
 	private DownloadManager	mDownloadManager;
@@ -23,7 +21,7 @@ public class DownloadService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		mDownloadManager = new DownloadManager(this);
+		mDownloadManager = DownloadManager.getInstance(this);
 		mDownloadManager.setSDCardAndCountStatusListener(new SDCardAndCountStatusListener() {
 			@Override
 			public void notFoundSDCard(int errorCode, String errorInfo) {
@@ -47,7 +45,7 @@ public class DownloadService extends Service {
 			}
 		});
 	}
-	
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null && intent.getAction().equals(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION)) {

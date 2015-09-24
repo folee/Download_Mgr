@@ -1,33 +1,50 @@
 package com.android.emerson.dl.utils;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 public class DLFileInfo implements Parcelable {
-	private int		fileId;
-	private String	fileSize;
-	private String	fileUrl;
-	private String	filePath;
-	private String	fileName;
-	private String	fileType;
-	private String	isPaused;
-	private String	speed;
-	private String	progress;
+	private final String	TAG						= DLFileInfo.class.getSimpleName();
+	/** 下载初始化状态 */
+	public static final int	STATUS_NULL				= 0;
+	/** 正在下载中 */
+	public static final int	STATUS_DOWNLOADING		= 1;
+	/** 下载失败 */
+	public static final int	STATUS_DOWNLOAD_FAIL	= 2;
+	/** 下载停止，人为操作 */
+	public static final int	STATUS_DOWNLOAD_STOP	= 3;
+	/** 下载完成 */
+	public static final int	STATUS_DOWNLOAD_END		= 4;
 
-	@Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("fileId       = ").append(fileId).append("\n");
-		sb.append("fileSize   	= ").append(fileSize).append("\n");
-		sb.append("fileUrl   	= ").append(fileUrl).append("\n");
-		sb.append("filePath   	= ").append(filePath).append("\n");
-		sb.append("fileName   	= ").append(fileName).append("\n");
-		sb.append("fileType   	= ").append(fileType).append("\n");
-		sb.append("isPaused   	= ").append(isPaused).append("\n");
-		sb.append("speed     	= ").append(speed).append("\n");
-		sb.append("progress   	= ").append(progress).append("\n");
-		return sb.toString();
-	}
+	//文件唯一标示ID
+	private int				fileId;
+	//文件大小
+	private String			fileSize;
+	//文件网络地址
+	private String			fileUrl;
+	//文件本地存储路径，只是文件夹路径
+	private String			filePath;
+	//文件名
+	private String			fileName;
+	//文件类型
+	private String			fileType;
+	//包名
+	private String			pkgName;
+	//待扩展字段
+	private String			extraVal;
+	//次序
+	private int				sequence;
+	//下载进度
+	private int				progress				= 0;
+	//文件下载状态
+	private int				status					= STATUS_NULL;
+	//当前文件下载是否有焦点
+	private boolean			hasFocus;
 
 	public int getFileId() {
 		return fileId;
@@ -77,28 +94,52 @@ public class DLFileInfo implements Parcelable {
 		this.fileType = fileType;
 	}
 
-	public String getIsPaused() {
-		return isPaused;
+	public String getPkgName() {
+		return pkgName;
 	}
 
-	public void setIsPaused(String isPaused) {
-		this.isPaused = isPaused;
+	public void setPkgName(String pkgName) {
+		this.pkgName = pkgName;
 	}
 
-	public String getSpeed() {
-		return speed;
+	public String getExtraVal() {
+		return extraVal;
 	}
 
-	public void setSpeed(String speed) {
-		this.speed = speed;
+	public void setExtraVal(String extraVal) {
+		this.extraVal = extraVal;
 	}
 
-	public String getProgress() {
+	public int getSequence() {
+		return sequence;
+	}
+
+	public void setSequence(int sequence) {
+		this.sequence = sequence;
+	}
+
+	public int getProgress() {
 		return progress;
 	}
 
-	public void setProgress(String progress) {
+	public void setProgress(int progress) {
 		this.progress = progress;
+	}
+
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public boolean isHasFocus() {
+		return hasFocus;
+	}
+
+	public void setHasFocus(boolean hasFocus) {
+		this.hasFocus = hasFocus;
 	}
 
 	public DLFileInfo() {}
@@ -116,9 +157,12 @@ public class DLFileInfo implements Parcelable {
 		dest.writeString(filePath);
 		dest.writeString(fileName);
 		dest.writeString(fileType);
-		dest.writeString(isPaused);
-		dest.writeString(speed);
-		dest.writeString(progress);
+		dest.writeString(pkgName);
+		dest.writeString(extraVal);
+		dest.writeInt(sequence);
+		dest.writeInt(progress);
+		dest.writeInt(status);
+		dest.writeByte((byte) (hasFocus ? 1 : 0));//if hasFocus == true, byte == 1
 	}
 
 	public DLFileInfo(Parcel source) {
@@ -128,9 +172,12 @@ public class DLFileInfo implements Parcelable {
 		this.filePath = source.readString();
 		this.fileName = source.readString();
 		this.fileType = source.readString();
-		this.isPaused = source.readString();
-		this.speed = source.readString();
-		this.progress = source.readString();
+		this.pkgName = source.readString();
+		this.extraVal = source.readString();
+		this.sequence = source.readInt();
+		this.progress = source.readInt();
+		this.status = source.readInt();
+		this.hasFocus = source.readByte() != 0;//hasFocus == true if byte != 0
 	}
 
 	public static final Parcelable.Creator<DLFileInfo>	CREATOR	= new Parcelable.Creator<DLFileInfo>() {
@@ -146,4 +193,62 @@ public class DLFileInfo implements Parcelable {
 																	}
 
 																};
+
+	@Override
+	public String toString() {
+		StringBuffer rslt = new StringBuffer();
+		Field[] fields = this.getClass().getDeclaredFields();
+		rslt.append(this.getClass().getSimpleName() + ":{");
+
+		String fieldName = null;
+		Method method = null;
+		Object tmpobj = null;
+		boolean first = true;
+		for (Field field : fields) {
+			try {
+				fieldName = field.getName();
+				if (first) {
+					rslt.append(fieldName + ":");
+					first = false;
+				}
+				else {
+					rslt.append("," + fieldName + ":");
+				}
+
+				method = this.getClass().getDeclaredMethod("get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1), null);
+				tmpobj = method.invoke(this, null);
+
+				if (tmpobj != null) {
+					//put the value to the soapObj
+					Class typeCls = field.getType();
+					String clsName = typeCls.getName();
+
+					if (typeCls.isArray()) {
+						Class subCls = typeCls.getComponentType();
+						String tmpV = null;
+						rslt.append("[");
+						for (int j = 0; j < Array.getLength(tmpobj); j++) {
+							tmpV = Array.get(tmpobj, j).toString();
+							if (j == 0) {
+								//String[] 
+								rslt.append(tmpobj == null ? null : tmpV.toString());
+							}
+							else {
+								//String[] 
+								rslt.append(tmpobj == null ? null : "," + tmpV.toString());
+							}
+						}
+						rslt.append(clsName + "]");
+					}
+					else {
+						rslt.append(tmpobj == null ? null : tmpobj.toString());
+					}
+				}
+			} catch (IllegalArgumentException e) {} catch (IllegalAccessException e) {} catch (SecurityException e) {} catch (NoSuchMethodException e) {
+				Log.d(TAG, e.getMessage());
+			} catch (Exception e) {}
+		}
+		rslt.append("};");
+		return rslt.toString();
+	}
 }

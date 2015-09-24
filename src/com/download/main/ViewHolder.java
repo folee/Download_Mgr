@@ -46,15 +46,15 @@ public class ViewHolder {
 	public void setData(DLFileInfo dLFileInfo) {
 		if (hasInited) {
 			titleText.setText(DownloadUtils.getFileNameFromUrl(dLFileInfo.getFileUrl()));
-			speedText.setText(dLFileInfo.getSpeed());
-			String progress = dLFileInfo.getProgress();
+			//speedText.setText(dLFileInfo.getSpeed());
+			String progress = dLFileInfo.getProgress() + "";
 			if (TextUtils.isEmpty(progress)) {
 				progressBar.setProgress(0);
 			}
 			else {
 				progressBar.setProgress(Integer.parseInt(progress));
 			}
-			if (Boolean.parseBoolean(dLFileInfo.getIsPaused())) {
+			if (dLFileInfo.getStatus() == DLFileInfo.STATUS_DOWNLOAD_STOP) {
 				onPause();
 			}
 		}

@@ -1,24 +1,27 @@
 package com.android.emerson.dl.core;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.emerson.dl.utils.ConfigUtils;
 import com.android.emerson.dl.utils.DLFileInfo;
-import com.android.emerson.dl.utils.DownloadUtils;
 import com.android.emerson.dl.utils.DownloadValues;
 
 public class DownloadManager extends Thread {
-	private String							TAG				= DownloadManager.class.getSimpleName();
 	private SDCardAndCountStatusListener	statusListener	= null;
 
 	private Context							mContext;
@@ -28,17 +31,68 @@ public class DownloadManager extends Thread {
 	private List<DownloadTask>				mPausingTasks;
 
 	private Boolean							isRunning		= false;
+	// 固定五个线程来执行任务
+	private ExecutorService					executorService	= Executors.newFixedThreadPool(5);
+	private static DownloadManager			instance;
+	
+	/**
+	 * 文件下载的Handler
+	 */
+	public List<Handler>			mDLHandler			= new ArrayList<Handler>();
 
-	public DownloadManager(Context context) {
+	private static final String				Thread_Name		= "DownloadManager_Handler_Thread";
+	private Handler							mHandler;
 
+	private void procHandler() {
+		HandlerThread mHandlerThread =  new HandlerThread(Thread_Name);
+		mHandlerThread.start();
+		mHandler = new Handler(mHandlerThread.getLooper()) {
+			@Override
+			public void handleMessage(Message msg) {
+				for (Handler handler : mDLHandler) {
+					if(handler != null)
+						handler.sendMessage(Message.obtain(handler, msg.what, msg.obj));
+				}
+			}
+		};
+	}
+
+	/**
+	 * 单一实例
+	 */
+	public static DownloadManager getInstance(Context context) {
+		if (instance == null) {
+			instance = new DownloadManager(context);
+			ConfigUtils.InitPath(context);
+		}
+		return instance;
+	}
+
+	private DownloadManager(Context context) {
 		mContext = context;
 		mTaskQueue = new TaskQueue();
 		mDownloadingTasks = new ArrayList<DownloadTask>();
 		mPausingTasks = new ArrayList<DownloadTask>();
+		procHandler();
+	}
+	
+	public void addHandler(Handler handler) {
+		Log.v("DownloadManager", "addHandler() ---> Before mDLHandler.size = " + mDLHandler.size());
+		if (!mDLHandler.contains(handler)) {
+			mDLHandler.add(handler);
+			Log.v("DownloadManager", "addHandler() ---> After mDLHandler.size = " + mDLHandler.size());
+		}
+	}
+
+	public void clearHandler(Handler handler) {
+		Log.v("DownloadManager", "clearHandler() ---> Before mDLHandler.size = " + mDLHandler.size());
+		if (mDLHandler.contains(handler)) {
+			mDLHandler.remove(handler);
+			Log.v("DownloadManager", "clearHandler() ---> After mDLHandler.size = " + mDLHandler.size());
+		}
 	}
 
 	public void startManage() {
-
 		isRunning = true;
 		this.start();
 		checkUncompleteTasks();
@@ -63,7 +117,8 @@ public class DownloadManager extends Thread {
 		while (isRunning) {
 			DownloadTask task = mTaskQueue.poll();
 			mDownloadingTasks.add(task);
-			task.execute();
+			//task.execute();
+			executorService.submit(task);
 		}
 	}
 
@@ -86,11 +141,11 @@ public class DownloadManager extends Thread {
 		//			return;
 		//		}
 
-		try {
-			DownloadUtils.mkdir();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		//		try {
+		//			ConfigUtils.mkdir();
+		//		} catch (IOException e1) {
+		//			e1.printStackTrace();
+		//		}
 
 		try {
 			addTask(newDownloadTask(dLFileInfo));
@@ -101,18 +156,22 @@ public class DownloadManager extends Thread {
 	}
 
 	private void addTask(DownloadTask task) {
-
-		broadcastAddTask(task.getAppInfo());
+		if(mHandler == null){
+			procHandler();
+		}
+		
+		mHandler.sendMessage(Message.obtain(mHandler, DownloadValues.Types.ADD, task));
 
 		mTaskQueue.offer(task);
 
 		if (!this.isAlive()) {
-			this.startManage();
+			//this.startManage();
+			isRunning = true;
+			this.start();
 		}
 	}
 
 	private void broadcastAddTask(DLFileInfo dLFileInfo) {
-
 		broadcastAddTask(dLFileInfo, false);
 	}
 
@@ -130,15 +189,15 @@ public class DownloadManager extends Thread {
 		DownloadTask task;
 		for (int i = 0; i < mDownloadingTasks.size(); i++) {
 			task = mDownloadingTasks.get(i);
-			broadcastAddTask(task.getAppInfo(), task.isInterrupt());
+			broadcastAddTask(task.getDLFileInfo(), task.isInterrupt());
 		}
 		for (int i = 0; i < mTaskQueue.size(); i++) {
 			task = mTaskQueue.get(i);
-			broadcastAddTask(task.getAppInfo());
+			broadcastAddTask(task.getDLFileInfo());
 		}
 		for (int i = 0; i < mPausingTasks.size(); i++) {
 			task = mPausingTasks.get(i);
-			broadcastAddTask(task.getAppInfo());
+			broadcastAddTask(task.getDLFileInfo());
 		}
 	}
 
@@ -147,7 +206,7 @@ public class DownloadManager extends Thread {
 		DownloadTask task;
 		for (int i = 0; i < mDownloadingTasks.size(); i++) {
 			task = mDownloadingTasks.get(i);
-			if (task.getAppInfo().getFileUrl().equals(url)) {
+			if (task.getDLFileInfo().getFileUrl().equals(url)) {
 				return true;
 			}
 		}
@@ -187,14 +246,20 @@ public class DownloadManager extends Thread {
 		return getQueueTaskCount() + getDownloadingTaskCount() + getPausingTaskCount();
 	}
 
-	public void checkUncompleteTasks() {
+	public List<DLFileInfo> checkUncompleteTasks() {
 
-		List<DLFileInfo> urlList = ConfigUtils.getURLArray(mContext);
-		if (urlList.size() >= 0) {
-			for (int i = 0; i < urlList.size(); i++) {
-				addTask(urlList.get(i));
+		List<DLFileInfo> dlApkList = ConfigUtils.getURLArray(mContext);
+		if (dlApkList.size() >= 0) {
+			for (int i = 0; i < dlApkList.size(); i++) {
+				DLFileInfo dLFileInfo = dlApkList.get(i);
+				if (!TextUtils.isEmpty(dLFileInfo.getFileUrl()) && !hasTask(dLFileInfo.getFileUrl())) {
+					addTask(dLFileInfo);
+				}
+				//addTask(urlList.get(i));
 			}
 		}
+
+		return dlApkList;
 	}
 
 	public synchronized void pauseTask(DLFileInfo dLFileInfo) {
@@ -202,7 +267,7 @@ public class DownloadManager extends Thread {
 		DownloadTask task;
 		for (int i = 0; i < mDownloadingTasks.size(); i++) {
 			task = mDownloadingTasks.get(i);
-			if (task != null && task.getAppInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
+			if (task != null && task.getDLFileInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
 				pauseTask(task);
 			}
 		}
@@ -231,8 +296,8 @@ public class DownloadManager extends Thread {
 		DownloadTask task;
 		for (int i = 0; i < mDownloadingTasks.size(); i++) {
 			task = mDownloadingTasks.get(i);
-			if (task != null && task.getAppInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
-				File file = new File(ConfigUtils.FILE_PATH + DownloadUtils.getFileNameFromUrl(task.getAppInfo().getFileUrl()));
+			if (task != null && task.getDLFileInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
+				File file = new File(dLFileInfo.getFilePath() + dLFileInfo.getFileName());
 				if (file.exists())
 					file.delete();
 
@@ -243,16 +308,19 @@ public class DownloadManager extends Thread {
 		}
 		for (int i = 0; i < mTaskQueue.size(); i++) {
 			task = mTaskQueue.get(i);
-			if (task != null && task.getAppInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
+			if (task != null && task.getDLFileInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
 				mTaskQueue.remove(task);
 			}
 		}
 		for (int i = 0; i < mPausingTasks.size(); i++) {
 			task = mPausingTasks.get(i);
-			if (task != null && task.getAppInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
+			if (task != null && task.getDLFileInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
 				mPausingTasks.remove(task);
 			}
 		}
+
+		String index = Integer.toHexString(dLFileInfo.getFileUrl().hashCode());
+		ConfigUtils.clearURL(mContext, index);
 	}
 
 	public synchronized void continueTask(DLFileInfo dLFileInfo) {
@@ -260,7 +328,7 @@ public class DownloadManager extends Thread {
 		DownloadTask task;
 		for (int i = 0; i < mPausingTasks.size(); i++) {
 			task = mPausingTasks.get(i);
-			if (task != null && task.getAppInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
+			if (task != null && task.getDLFileInfo().getFileUrl().equals(dLFileInfo.getFileUrl())) {
 				continueTask(task);
 			}
 
@@ -275,7 +343,7 @@ public class DownloadManager extends Thread {
 			// move to pausing list
 			try {
 				mDownloadingTasks.remove(task);
-				task = newDownloadTask(task.getAppInfo());
+				task = newDownloadTask(task.getDLFileInfo());
 				mPausingTasks.add(task);
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
@@ -293,16 +361,16 @@ public class DownloadManager extends Thread {
 	}
 
 	public synchronized void completeTask(DownloadTask task) {
-
 		if (mDownloadingTasks.contains(task)) {
-			ConfigUtils.clearURL(mContext, mDownloadingTasks.indexOf(task));
+			Log.v("DownloadManager", "completeTask() --> ");
+			String index = Integer.toHexString(task.getDLFileInfo().getFileUrl().hashCode());
+			task.getDLFileInfo().setStatus(DLFileInfo.STATUS_DOWNLOAD_END);
+			ConfigUtils.storeURL(mContext, index, task.getDLFileInfo());
 			mDownloadingTasks.remove(task);
-
-			// notify list changed
-			Intent nofityIntent = new Intent(DownloadValues.Actions.BROADCAST_RECEIVER_ACTION);
-			nofityIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.COMPLETE);
-			nofityIntent.putExtra(DownloadValues.APPINFO, task.getAppInfo());
-			mContext.sendBroadcast(nofityIntent);
+			mHandler.sendMessage(Message.obtain(mHandler, DownloadValues.Types.COMPLETE, task));
+		}
+		else {
+			Log.v("DownloadManager", "DownloadManager completeTask() -->  mDownloadingTasks.contains(task) = False");
 		}
 	}
 
@@ -319,25 +387,19 @@ public class DownloadManager extends Thread {
 
 			@Override
 			public void updateProcess(DownloadTask task) {
-
-				Intent updateIntent = new Intent(DownloadValues.Actions.BROADCAST_RECEIVER_ACTION);
-				updateIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.PROCESS);
-				updateIntent.putExtra(DownloadValues.PROCESS_SPEED, task.getDownloadSpeed() + "kbps | " + task.getDownloadSize() + " / " + task.getTotalSize());
-				updateIntent.putExtra(DownloadValues.PROCESS_PROGRESS, task.getDownloadPercent() + "");
-				updateIntent.putExtra(DownloadValues.APPINFO, task.getAppInfo());
-				mContext.sendBroadcast(updateIntent);
+				mHandler.sendMessage(Message.obtain(mHandler, DownloadValues.Types.PROCESS, task));
 			}
 
 			@Override
 			public void preDownload(DownloadTask task) {
-				Log.v(TAG, "task.getAppInfo()=" + task.getAppInfo().toString());
-
-				ConfigUtils.storeURL(mContext, mDownloadingTasks.indexOf(task), task.getAppInfo());
+				String index = Integer.toHexString(task.getDLFileInfo().getFileUrl().hashCode());
+				ConfigUtils.storeURL(mContext, index, task.getDLFileInfo());
+				mHandler.sendMessage(Message.obtain(mHandler, DownloadValues.Types.ADD, task));
 			}
 
 			@Override
 			public void finishDownload(DownloadTask task) {
-
+				Log.v("DownloadManager", "finishDownload() --> ");
 				completeTask(task);
 			}
 
@@ -347,11 +409,13 @@ public class DownloadManager extends Thread {
 				errorIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.ERROR);
 				errorIntent.putExtra(DownloadValues.ERROR_CODE, errorCode);
 				errorIntent.putExtra(DownloadValues.ERROR_INFO, errorInfo);
-				errorIntent.putExtra(DownloadValues.APPINFO, task.getAppInfo());
+				errorIntent.putExtra(DownloadValues.APPINFO, task.getDLFileInfo());
 				mContext.sendBroadcast(errorIntent);
 				if (errorCode != DownloadTask.ERROR_BLOCK_INTERNET && errorCode != DownloadTask.ERROR_TIME_OUT) {
 					completeTask(task);
 				}
+				
+				mHandler.sendMessage(Message.obtain(mHandler, DownloadValues.Types.ERROR, task));
 			}
 		};
 		return new DownloadTask(mContext, dLFileInfo, taskListener);

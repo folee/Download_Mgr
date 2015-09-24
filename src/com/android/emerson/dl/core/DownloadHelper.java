@@ -10,21 +10,27 @@ public class DownloadHelper {
 	public static PreDownloadStatusListener	preStatusListener	= null;
 
 	public static void startAllTask(Context context) {
-		Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		//Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		Intent downloadIntent = new Intent(context, DownloadService.class);
+		downloadIntent.setAction(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
 		downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.START);
 		context.startService(downloadIntent);
 	}
 
 	public static void addNewTask(Context context, DLFileInfo dLFileInfo, PreDownloadStatusListener preListener) {
 		preStatusListener = preListener;
-		Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		//Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		Intent downloadIntent = new Intent(context, DownloadService.class);
+		downloadIntent.setAction(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
 		downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.ADD);
 		downloadIntent.putExtra(DownloadValues.APPINFO, dLFileInfo);
 		context.startService(downloadIntent);
 	}
 	
 	public static void stopAllTask(Context context){
-		Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		//Intent downloadIntent = new Intent(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
+		Intent downloadIntent = new Intent(context, DownloadService.class);
+		downloadIntent.setAction(DownloadValues.Actions.DOWNLOAD_SERVICE_ACTION);
 		downloadIntent.putExtra(DownloadValues.TYPE, DownloadValues.Types.STOP);
 		context.startService(downloadIntent);
 	}

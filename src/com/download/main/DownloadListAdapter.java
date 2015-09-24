@@ -42,9 +42,17 @@ public class DownloadListAdapter extends BaseAdapter {
 	}
 
 	public void addItem(DLFileInfo dLFileInfo, boolean isPaused) {
-		dLFileInfo.setIsPaused(isPaused + "");
-		dataList.add(dLFileInfo);
-		this.notifyDataSetChanged();
+		boolean isExist = false;
+		for(DLFileInfo info : dataList){
+			if(info.getFileUrl().equals(dLFileInfo.getFileUrl())){
+				isExist = true;
+				break;
+			}
+		}
+		if(!isExist){
+			dataList.add(dLFileInfo);
+			this.notifyDataSetChanged();
+		}
 	}
 
 	public void removeItem(DLFileInfo dLFileInfo) {
@@ -121,34 +129,4 @@ public class DownloadListAdapter extends BaseAdapter {
 			}
 		}
 	}
-
-//	private class DownloadBtnListener implements View.OnClickListener {
-//		private int			mPosition;
-//		private ViewHolder	mViewHolder;
-//
-//		public DownloadBtnListener(int position, ViewHolder viewHolder) {
-//			this.mPosition = position;
-//			this.mViewHolder = viewHolder;
-//		}
-//
-//		@Override
-//		public void onClick(View v) {
-//			switch (v.getId()) {
-//			case R.id.btn_continue:
-//				// mDownloadManager.continueTask(mPosition);
-//				mViewHolder.continueButton.setVisibility(View.GONE);
-//				mViewHolder.pauseButton.setVisibility(View.VISIBLE);
-//				break;
-//			case R.id.btn_pause:
-//				// mDownloadManager.pauseTask(mPosition);
-//				mViewHolder.continueButton.setVisibility(View.VISIBLE);
-//				mViewHolder.pauseButton.setVisibility(View.GONE);
-//				break;
-//			case R.id.btn_delete:
-//				// mDownloadManager.deleteTask(mPosition);
-//				DownloadListAdapter.this.notifyDataSetChanged();
-//				break;
-//			}
-//		}
-//	}
 }

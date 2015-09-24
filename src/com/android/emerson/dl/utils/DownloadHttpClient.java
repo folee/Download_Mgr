@@ -78,23 +78,22 @@ import android.util.Log;
 public final class DownloadHttpClient implements HttpClient {
 
 	// Gzip of data shorter than this probably won't be worthwhile
-	public static long DEFAULT_SYNC_MIN_GZIP_BYTES = 256;
+	public static long							DEFAULT_SYNC_MIN_GZIP_BYTES	= 256;
 
 	// Default connection and socket timeout of 60 seconds. Tweak to taste.
-	private static final int SOCKET_OPERATION_TIMEOUT = 60 * 1000;
+	private static final int					SOCKET_OPERATION_TIMEOUT	= 60 * 1000;
 
-	private static final String TAG = DownloadHttpClient.class.getSimpleName();
+	private static final String					TAG							= DownloadHttpClient.class.getSimpleName();
 
 	/** Interceptor throws an exception if the executing thread is blocked */
-	private static final HttpRequestInterceptor sThreadCheckInterceptor = new HttpRequestInterceptor() {
-		public void process(HttpRequest request, HttpContext context) {
-			// Prevent the HttpRequest from being sent on the main thread
-			if (Looper.myLooper() != null
-					&& Looper.myLooper() == Looper.getMainLooper()) {
-				throw new RuntimeException("This thread forbids HTTP requests");
-			}
-		}
-	};
+	private static final HttpRequestInterceptor	sThreadCheckInterceptor		= new HttpRequestInterceptor() {
+																				public void process(HttpRequest request, HttpContext context) {
+																					// Prevent the HttpRequest from being sent on the main thread
+																					if (Looper.myLooper() != null && Looper.myLooper() == Looper.getMainLooper()) {
+																						throw new RuntimeException("This thread forbids HTTP requests");
+																					}
+																				}
+																			};
 
 	/**
 	 * Create a new HttpClient with reasonable defaults (which you can update).
@@ -105,16 +104,14 @@ public final class DownloadHttpClient implements HttpClient {
 	 *            to use for caching SSL sessions (may be null for no caching)
 	 * @return AndroidHttpClient for you to use for all your requests.
 	 */
-	public static DownloadHttpClient newInstance(String userAgent,
-			Context context) {
+	public static DownloadHttpClient newInstance(String userAgent, Context context) {
 		HttpParams params = new BasicHttpParams();
 
 		// Turn off stale checking. Our connections break all the time anyway,
 		// and it's not worth it to pay the penalty of checking every time.
 		HttpConnectionParams.setStaleCheckingEnabled(params, false);
 
-		HttpConnectionParams.setConnectionTimeout(params,
-				SOCKET_OPERATION_TIMEOUT);
+		HttpConnectionParams.setConnectionTimeout(params, SOCKET_OPERATION_TIMEOUT);
 		HttpConnectionParams.setSoTimeout(params, SOCKET_OPERATION_TIMEOUT);
 		HttpConnectionParams.setSocketBufferSize(params, 8192);
 
@@ -129,14 +126,12 @@ public final class DownloadHttpClient implements HttpClient {
 		// Set the specified user agent and register standard protocols.
 		HttpProtocolParams.setUserAgent(params, userAgent);
 		SchemeRegistry schemeRegistry = new SchemeRegistry();
-		schemeRegistry.register(new Scheme("http", PlainSocketFactory
-				.getSocketFactory(), 80));
+		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 		// schemeRegistry.register(new Scheme("https",
 		// SSLCertificateSocketFactory.getHttpSocketFactory(
 		// SOCKET_OPERATION_TIMEOUT, sessionCache), 443));
 
-		ClientConnectionManager manager = new ThreadSafeClientConnManager(
-				params, schemeRegistry);
+		ClientConnectionManager manager = new ThreadSafeClientConnManager(params, schemeRegistry);
 
 		// We use a factory method to modify superclass initialization
 		// parameters without the funny call-a-static-method dance.
@@ -154,10 +149,9 @@ public final class DownloadHttpClient implements HttpClient {
 		return newInstance(userAgent, null /* session cache */);
 	}
 
-	private final HttpClient delegate;
+	private final HttpClient	delegate;
 
-	private RuntimeException mLeakedException = new IllegalStateException(
-			"AndroidHttpClient created and never closed");
+	private RuntimeException	mLeakedException	= new IllegalStateException("AndroidHttpClient created and never closed");
 
 	private DownloadHttpClient(ClientConnectionManager ccm, HttpParams params) {
 		this.delegate = new DefaultHttpClient(ccm, params) {
@@ -173,15 +167,11 @@ public final class DownloadHttpClient implements HttpClient {
 
 			@Override
 			protected HttpContext createHttpContext() {
-				// Same as DefaultHttpClient.createHttpContext() minus the
-				// cookie store.
+				// Same as DefaultHttpClient.createHttpContext() minus the cookie store.
 				HttpContext context = new BasicHttpContext();
-				context.setAttribute(ClientContext.AUTHSCHEME_REGISTRY,
-						getAuthSchemes());
-				context.setAttribute(ClientContext.COOKIESPEC_REGISTRY,
-						getCookieSpecs());
-				context.setAttribute(ClientContext.CREDS_PROVIDER,
-						getCredentialsProvider());
+				context.setAttribute(ClientContext.AUTHSCHEME_REGISTRY, getAuthSchemes());
+				context.setAttribute(ClientContext.COOKIESPEC_REGISTRY, getCookieSpecs());
+				context.setAttribute(ClientContext.CREDS_PROVIDER, getCredentialsProvider());
 				return context;
 			}
 		};
@@ -217,8 +207,7 @@ public final class DownloadHttpClient implements HttpClient {
 	 * @return the input stream to read from
 	 * @throws IOException
 	 */
-	public static InputStream getUngzippedContent(HttpEntity entity)
-			throws IOException {
+	public static InputStream getUngzippedContent(HttpEntity entity) throws IOException {
 		InputStream responseStream = entity.getContent();
 		if (responseStream == null)
 			return responseStream;
@@ -256,42 +245,31 @@ public final class DownloadHttpClient implements HttpClient {
 		return delegate.execute(request);
 	}
 
-	public HttpResponse execute(HttpUriRequest request, HttpContext context)
-			throws IOException {
+	public HttpResponse execute(HttpUriRequest request, HttpContext context) throws IOException {
 		return delegate.execute(request, context);
 	}
 
-	public HttpResponse execute(HttpHost target, HttpRequest request)
-			throws IOException {
+	public HttpResponse execute(HttpHost target, HttpRequest request) throws IOException {
 		return delegate.execute(target, request);
 	}
 
-	public HttpResponse execute(HttpHost target, HttpRequest request,
-			HttpContext context) throws IOException {
+	public HttpResponse execute(HttpHost target, HttpRequest request, HttpContext context) throws IOException {
 		return delegate.execute(target, request, context);
 	}
 
-	public <T> T execute(HttpUriRequest request,
-			ResponseHandler<? extends T> responseHandler) throws IOException,
-			ClientProtocolException {
+	public <T> T execute(HttpUriRequest request, ResponseHandler<? extends T> responseHandler) throws IOException, ClientProtocolException {
 		return delegate.execute(request, responseHandler);
 	}
 
-	public <T> T execute(HttpUriRequest request,
-			ResponseHandler<? extends T> responseHandler, HttpContext context)
-			throws IOException, ClientProtocolException {
+	public <T> T execute(HttpUriRequest request, ResponseHandler<? extends T> responseHandler, HttpContext context) throws IOException, ClientProtocolException {
 		return delegate.execute(request, responseHandler, context);
 	}
 
-	public <T> T execute(HttpHost target, HttpRequest request,
-			ResponseHandler<? extends T> responseHandler) throws IOException,
-			ClientProtocolException {
+	public <T> T execute(HttpHost target, HttpRequest request, ResponseHandler<? extends T> responseHandler) throws IOException, ClientProtocolException {
 		return delegate.execute(target, request, responseHandler);
 	}
 
-	public <T> T execute(HttpHost target, HttpRequest request,
-			ResponseHandler<? extends T> responseHandler, HttpContext context)
-			throws IOException, ClientProtocolException {
+	public <T> T execute(HttpHost target, HttpRequest request, ResponseHandler<? extends T> responseHandler, HttpContext context) throws IOException, ClientProtocolException {
 		return delegate.execute(target, request, responseHandler, context);
 	}
 
@@ -303,12 +281,12 @@ public final class DownloadHttpClient implements HttpClient {
 	 *            The bytes to compress
 	 * @return Entity holding the data
 	 */
-	public static AbstractHttpEntity getCompressedEntity(byte data[],
-			ContentResolver resolver) throws IOException {
+	public static AbstractHttpEntity getCompressedEntity(byte data[], ContentResolver resolver) throws IOException {
 		AbstractHttpEntity entity;
 		if (data.length < getMinGzipSize(resolver)) {
 			entity = new ByteArrayEntity(data);
-		} else {
+		}
+		else {
 			ByteArrayOutputStream arr = new ByteArrayOutputStream();
 			OutputStream zipper = new GZIPOutputStream(arr);
 			zipper.write(data);
@@ -334,8 +312,8 @@ public final class DownloadHttpClient implements HttpClient {
 	 */
 	private static class LoggingConfiguration {
 
-		private final String tag;
-		private final int level;
+		private final String	tag;
+		private final int		level;
 
 		private LoggingConfiguration(String tag, int level) {
 			this.tag = tag;
@@ -358,7 +336,7 @@ public final class DownloadHttpClient implements HttpClient {
 	}
 
 	/** cURL logging configuration. */
-	private volatile LoggingConfiguration curlConfiguration;
+	private volatile LoggingConfiguration	curlConfiguration;
 
 	/**
 	 * Enables cURL request logging for this client.
@@ -373,8 +351,7 @@ public final class DownloadHttpClient implements HttpClient {
 			throw new NullPointerException("name");
 		}
 		if (level < Log.VERBOSE || level > Log.ASSERT) {
-			throw new IllegalArgumentException("Level is out of range ["
-					+ Log.VERBOSE + ".." + Log.ASSERT + "]");
+			throw new IllegalArgumentException("Level is out of range [" + Log.VERBOSE + ".." + Log.ASSERT + "]");
 		}
 
 		curlConfiguration = new LoggingConfiguration(name, level);
@@ -391,11 +368,9 @@ public final class DownloadHttpClient implements HttpClient {
 	 * Logs cURL commands equivalent to requests.
 	 */
 	private class CurlLogger implements HttpRequestInterceptor {
-		public void process(HttpRequest request, HttpContext context)
-				throws HttpException, IOException {
+		public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
 			LoggingConfiguration configuration = curlConfiguration;
-			if (configuration != null && configuration.isLoggable()
-					&& request instanceof HttpUriRequest) {
+			if (configuration != null && configuration.isLoggable() && request instanceof HttpUriRequest) {
 				// Never print auth token -- we used to check ro.secure=0 to
 				// enable that, but can't do that in unbundled code.
 				configuration.println(toCurl((HttpUriRequest) request, false));
@@ -406,16 +381,13 @@ public final class DownloadHttpClient implements HttpClient {
 	/**
 	 * Generates a cURL command equivalent to the given request.
 	 */
-	private static String toCurl(HttpUriRequest request, boolean logAuthToken)
-			throws IOException {
+	private static String toCurl(HttpUriRequest request, boolean logAuthToken) throws IOException {
 		StringBuilder builder = new StringBuilder();
 
 		builder.append("curl ");
 
 		for (Header header : request.getAllHeaders()) {
-			if (!logAuthToken
-					&& (header.getName().equals("Authorization") || header
-							.getName().equals("Cookie"))) {
+			if (!logAuthToken && (header.getName().equals("Authorization") || header.getName().equals("Cookie"))) {
 				continue;
 			}
 			builder.append("--header \"");
@@ -449,9 +421,9 @@ public final class DownloadHttpClient implements HttpClient {
 					String entityString = stream.toString();
 
 					// TODO: Check the content type, too.
-					builder.append(" --data-ascii \"").append(entityString)
-							.append("\"");
-				} else {
+					builder.append(" --data-ascii \"").append(entityString).append("\"");
+				}
+				else {
 					builder.append(" [TOO MUCH DATA TO INCLUDE]");
 				}
 			}
